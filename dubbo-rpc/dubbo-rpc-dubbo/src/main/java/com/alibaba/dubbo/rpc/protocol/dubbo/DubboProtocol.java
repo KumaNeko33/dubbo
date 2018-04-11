@@ -224,10 +224,10 @@ public class DubboProtocol extends AbstractProtocol {
     public <T> Exporter<T> export(Invoker<T> invoker) throws RpcException {
         URL url = invoker.getUrl();
 
-        // export service.
+        // 暴露服务 export service.
         String key = serviceKey(url);
-        DubboExporter<T> exporter = new DubboExporter<T>(invoker, key, exporterMap);
-        exporterMap.put(key, exporter);
+        DubboExporter<T> exporter = new DubboExporter<T>(invoker, key, exporterMap);//将 Invoker转换成Exporter
+        exporterMap.put(key, exporter);//本地暴露也用到了，exporterMap缓存，保存转换后的exporter
 
         //export an stub service for dispatching event
         Boolean isStubSupportEvent = url.getParameter(Constants.STUB_EVENT_KEY, Constants.DEFAULT_STUB_EVENT);
@@ -244,7 +244,7 @@ public class DubboProtocol extends AbstractProtocol {
             }
         }
 
-        openServer(url);
+        openServer(url);//开启NettyServer的socket端口监听，准备接收数据
         optimizeSerialization(url);
         return exporter;
     }
@@ -257,7 +257,7 @@ public class DubboProtocol extends AbstractProtocol {
         if (isServer) {
             ExchangeServer server = serverMap.get(key);
             if (server == null) {
-                serverMap.put(key, createServer(url));
+                serverMap.put(key, createServer(url));//key:192.168.18.1:20880 value：ExchangeServer； createServer(url)返回ExchangeServer的实现类HeaderExchangeServer，添加参数列表 如心跳，心跳时间
             } else {
                 // server supports reset, use together with override
                 server.reset(url);
@@ -265,6 +265,7 @@ public class DubboProtocol extends AbstractProtocol {
         }
     }
 
+    //返回HeaderExchangeServer，并添加参数列表 如心跳，心跳时间
     private ExchangeServer createServer(URL url) {
         // send readonly event when server closes, it's enabled by default
         url = url.addParameterIfAbsent(Constants.CHANNEL_READONLYEVENT_SENT_KEY, Boolean.TRUE.toString());
@@ -278,7 +279,7 @@ public class DubboProtocol extends AbstractProtocol {
         url = url.addParameter(Constants.CODEC_KEY, DubboCodec.NAME);
         ExchangeServer server;
         try {
-            server = Exchangers.bind(url, requestHandler);
+            server = Exchangers.bind(url, requestHandler);// 返回HeaderExchangeServer，添加参数列表，如心跳，心跳时间，其中getTransporter()获取的实例来源于配置，默认返回一个NettyTransporter
         } catch (RemotingException e) {
             throw new RpcException("Fail to start server(url: " + url + ") " + e.getMessage(), e);
         }

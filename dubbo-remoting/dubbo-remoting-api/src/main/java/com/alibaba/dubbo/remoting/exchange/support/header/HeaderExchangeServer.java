@@ -60,17 +60,17 @@ public class HeaderExchangeServer implements ExchangeServer {
     private int heartbeatTimeout;
     private AtomicBoolean closed = new AtomicBoolean(false);
 
-    public HeaderExchangeServer(Server server) {
+    public HeaderExchangeServer(Server server) { //默认Server是NettyServer
         if (server == null) {
             throw new IllegalArgumentException("server == null");
         }
         this.server = server;
-        this.heartbeat = server.getUrl().getParameter(Constants.HEARTBEAT_KEY, 0);
-        this.heartbeatTimeout = server.getUrl().getParameter(Constants.HEARTBEAT_TIMEOUT_KEY, heartbeat * 3);
+        this.heartbeat = server.getUrl().getParameter(Constants.HEARTBEAT_KEY, 0);//设置心跳
+        this.heartbeatTimeout = server.getUrl().getParameter(Constants.HEARTBEAT_TIMEOUT_KEY, heartbeat * 3);//设置心跳时间
         if (heartbeatTimeout < heartbeat * 2) {
             throw new IllegalStateException("heartbeatTimeout < heartbeatInterval * 2");
         }
-        startHeartbeatTimer();
+        startHeartbeatTimer();//开始心跳，默认为0，不启动心跳
     }
 
     public Server getServer() {

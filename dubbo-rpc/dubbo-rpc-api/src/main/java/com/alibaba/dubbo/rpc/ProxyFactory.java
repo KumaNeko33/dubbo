@@ -24,7 +24,7 @@ import com.alibaba.dubbo.common.extension.SPI;
 /**
  * ProxyFactory. (API/SPI, Singleton, ThreadSafe)
  */
-@SPI("javassist")
+@SPI("javassist")//根据SPI配置ProxyFactory的实现类使用 JavassistProxyFactory.java
 public interface ProxyFactory {
 
     /**
@@ -45,7 +45,7 @@ public interface ProxyFactory {
      * @param url
      * @return invoker
      */
-    @Adaptive({Constants.PROXY_KEY})
+    @Adaptive({Constants.PROXY_KEY})//@Adaptive注释在方法上，会生成 动态编译的Adaptive 类
     <T> Invoker<T> getInvoker(T proxy, Class<T> type, URL url) throws RpcException;
 
 }

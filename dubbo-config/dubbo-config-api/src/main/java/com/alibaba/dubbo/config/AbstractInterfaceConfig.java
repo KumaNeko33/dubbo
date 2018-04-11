@@ -160,7 +160,7 @@ public abstract class AbstractInterfaceConfig extends AbstractMethodConfig {
         checkRegistry();
         List<URL> registryList = new ArrayList<URL>();
         if (registries != null && !registries.isEmpty()) {
-            for (RegistryConfig config : registries) {
+            for (RegistryConfig config : registries) { // 如果registries有多个说明有多个注册中心
                 String address = config.getAddress();
                 if (address == null || address.length() == 0) {
                     address = Constants.ANYHOST_VALUE;
@@ -172,7 +172,7 @@ public abstract class AbstractInterfaceConfig extends AbstractMethodConfig {
                 if (address != null && address.length() > 0
                         && !RegistryConfig.NO_AVAILABLE.equalsIgnoreCase(address)) {
                     Map<String, String> map = new HashMap<String, String>();
-                    appendParameters(map, application);
+                    appendParameters(map, application); // application = "<dubbo:application name="demo-provider" qosPort="22222" id="demo-provider" />" qosPort是dubbo.properties文件中配置的端口
                     appendParameters(map, config);
                     map.put("path", RegistryService.class.getName());
                     map.put("dubbo", Version.getVersion());
@@ -180,17 +180,17 @@ public abstract class AbstractInterfaceConfig extends AbstractMethodConfig {
                     if (ConfigUtils.getPid() > 0) {
                         map.put(Constants.PID_KEY, String.valueOf(ConfigUtils.getPid()));
                     }
-                    if (!map.containsKey("protocol")) {
+                    if (!map.containsKey("protocol")) { // 如果配置中没有指定协议protocol
                         if (ExtensionLoader.getExtensionLoader(RegistryFactory.class).hasExtension("remote")) {
-                            map.put("protocol", "remote");
+                            map.put("protocol", "remote");// remote协议
                         } else {
-                            map.put("protocol", "dubbo");
+                            map.put("protocol", "dubbo");// 默认使用dubbo协议
                         }
                     }
-                    List<URL> urls = UrlUtils.parseURLs(address, map);
+                    List<URL> urls = UrlUtils.parseURLs(address, map); // 将map转成url地址urls.get(0) = zookeeper://127.0.0.1:2181/com.alibaba.dubbo.registry.RegistryService?application=demo-provider&dubbo=2.0.0&pid=11400&qos.port=22222&timestamp=1523338765151
                     for (URL url : urls) {
-                        url = url.addParameter(Constants.REGISTRY_KEY, url.getProtocol());
-                        url = url.setProtocol(Constants.REGISTRY_PROTOCOL);
+                        url = url.addParameter(Constants.REGISTRY_KEY, url.getProtocol());//添加registry注册中心为zookeeper 变成 zookeeper://127.0.0.1:2181/com.alibaba.dubbo.registry.RegistryService?application=demo-provider&dubbo=2.0.0&pid=11400&qos.port=22222&registry=zookeeper&timestamp=1523338765151
+                        url = url.setProtocol(Constants.REGISTRY_PROTOCOL);//将头部的zookeeper换成registry: 即 registry://127.0.0.1:2181/com.alibaba.dubbo.registry.RegistryService?application=demo-provider&dubbo=2.0.0&pid=11400&qos.port=22222&registry=zookeeper&timestamp=1523338765151
                         if ((provider && url.getParameter(Constants.REGISTER_KEY, true))
                                 || (!provider && url.getParameter(Constants.SUBSCRIBE_KEY, true))) {
                             registryList.add(url);
@@ -199,7 +199,7 @@ public abstract class AbstractInterfaceConfig extends AbstractMethodConfig {
                 }
             }
         }
-        return registryList;
+        return registryList;//registryList.get(0) = registry://127.0.0.1:2181/com.alibaba.dubbo.registry.RegistryService?application=demo-provider&dubbo=2.0.0&pid=11400&qos.port=22222&registry=zookeeper&timestamp=1523338765151
     }
 
     protected URL loadMonitor(URL registryURL) {

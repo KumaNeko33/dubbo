@@ -79,6 +79,7 @@ public abstract class AbstractRegistry implements Registry {
         setUrl(url);
         // Start file save timer
         syncSaveFile = url.getParameter(Constants.REGISTRY_FILESAVE_SYNC_KEY, false);
+        // zookeeper注册信息本地缓存 文件路径
         String filename = url.getParameter(Constants.FILE_KEY, System.getProperty("user.home") + "/.dubbo/dubbo-registry-" + url.getParameter(Constants.APPLICATION_KEY) + "-" + url.getAddress() + ".cache");
         File file = null;
         if (ConfigUtils.isNotEmpty(filename)) {
@@ -90,7 +91,7 @@ public abstract class AbstractRegistry implements Registry {
             }
         }
         this.file = file;
-        loadProperties();
+        loadProperties();// 缓存zookeeper注册信息到file文件，并转成properties对象方便使用
         notify(url.getBackupUrls());
     }
 
@@ -138,8 +139,20 @@ public abstract class AbstractRegistry implements Registry {
         return lastCacheChanged;
     }
 
+    /**
+     * 1 先将文件中的内容读取到一个新的Properties newProperties中；
+     * 2 之后将properties中的信息写入这个newProperties中；
+     * 3 之后创建dubbo-registry-10.211.55.5.cache.lock文件；
+     * 4 最后将这个newProperties中的内容写入到文件中
+     * 保存操作执行之后，会在文件夹/Users/jigangzhao/.dubbo下生成两个文件：
+     * dubbo-registry-10.211.55.5.cache
+     * dubbo-registry-10.211.55.5.cache.lock
+     * @param version
+     */
     public void doSaveProperties(long version) {
-        if (version < lastCacheChanged.get()) {
+        if (version < lastCacheChanged.get()) { //这里有一个version，实际上是一个CAS判断，我们在saveProperties(URL url)方法中执行了long version = lastCacheChanged.incrementAndGet();之后在doSaveProperties(long version)进行
+            // if (version < lastCacheChanged.get())判断，如果满足这个条件，说明当前线程在进行doSaveProperties(long version)时，已经有其他线程执行了saveProperties(URL url)，
+            // 马上就要执行doSaveProperties(long version)，所以当前线程放弃操作，让后边的这个线程来做保存操作。
             return;
         }
         if (file == null) {
@@ -155,7 +168,7 @@ public abstract class AbstractRegistry implements Registry {
             try {
                 FileChannel channel = raf.getChannel();
                 try {
-                    FileLock lock = channel.tryLock();
+                    FileLock lock = channel.tryLock();// 对文件进行加锁
                     if (lock == null) {
                         throw new IOException("Can not lock the registry cache file " + file.getAbsolutePath() + ", ignore and retry later, maybe multi java process use the file, please config: dubbo.registry.file=xxx.properties");
                     }
@@ -190,11 +203,11 @@ public abstract class AbstractRegistry implements Registry {
     }
 
     private void loadProperties() {
-        if (file != null && file.exists()) {
+        if (file != null && file.exists()) { //保存之前先读取一遍，防止多注册中心之间的冲突
             InputStream in = null;
             try {
                 in = new FileInputStream(file);
-                properties.load(in);
+                properties.load(in);//将配置写入 file，并转换成properties对象方便使用
                 if (logger.isInfoEnabled()) {
                     logger.info("Load registry store file " + file + ", data: " + properties);
                 }
@@ -364,6 +377,16 @@ public abstract class AbstractRegistry implements Registry {
         }
     }
 
+    /**
+     * 1 首先遍历List<URL> urls，将urls按照category进行分类，存储在Map<"categoryName", List<URL>> result中；
+     * 2 之后遍历result：（每遍历一次，都是一个新的category）
+     * （1）将Map<"categoryName", List<URL>>存储在ConcurrentMap<URL, Map<String, List<URL>>> notified的Map<String, List<URL>>中
+     * （2）进行properties设置和文件保存
+     * （3）调用传入放入listener的notify()方法。
+     * @param url
+     * @param listener
+     * @param urls
+     */
     protected void notify(URL url, NotifyListener listener, List<URL> urls) {
         if (url == null) {
             throw new IllegalArgumentException("notify url == null");
@@ -402,12 +425,19 @@ public abstract class AbstractRegistry implements Registry {
         for (Map.Entry<String, List<URL>> entry : result.entrySet()) {
             String category = entry.getKey();
             List<URL> categoryList = entry.getValue();
-            categoryNotified.put(category, categoryList);
-            saveProperties(url);
-            listener.notify(categoryList);
+            categoryNotified.put(category, categoryList);//填充notified集合
+            saveProperties(url);//更新本地缓存及properties的zookeepers信息
+            listener.notify(categoryList);//对原本注册了的providerUrl重新校验，如果url发生了变化则重新export。这里传入的listener是 RegistryProtocol的内存类OverrideListener
         }
     }
 
+    /**
+     * 1 按照url从将ConcurrentMap<URL, Map<String, List<URL>>> notified中将Map<String, List<URL>>拿出来，之后将所有category的list组成一串buf（以空格分隔）
+     * 2 将< serviceKey<->buf >写入本地磁盘缓存中：Properties properties
+     * 3 将AtomicLong lastCacheChanged加1
+     * 4 之后根据syncSaveFile判断时同步保存properties到文件，还是异步保存properties到文件，默认异步即使用线程池
+     * @param url
+     */
     private void saveProperties(URL url) {
         if (file == null) {
             return;
@@ -431,7 +461,7 @@ public abstract class AbstractRegistry implements Registry {
             if (syncSaveFile) {
                 doSaveProperties(version);
             } else {
-                registryCacheExecutor.execute(new SaveProperties(version));
+                registryCacheExecutor.execute(new SaveProperties(version));//异步更新：采用线程池来更新 本地缓存的zookeeper信息
             }
         } catch (Throwable t) {
             logger.warn(t.getMessage(), t);

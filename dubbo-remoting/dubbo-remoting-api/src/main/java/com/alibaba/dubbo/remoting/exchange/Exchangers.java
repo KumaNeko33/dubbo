@@ -67,7 +67,7 @@ public class Exchangers {
             throw new IllegalArgumentException("handler == null");
         }
         url = url.addParameterIfAbsent(Constants.CODEC_KEY, "exchange");
-        return getExchanger(url).bind(url, handler);
+        return getExchanger(url).bind(url, handler);//.bind(url, handler)返回一个HeaderExchangeServer并添加参数列表，如心跳河心跳时间
     }
 
     public static ExchangeClient connect(String url) throws RemotingException {

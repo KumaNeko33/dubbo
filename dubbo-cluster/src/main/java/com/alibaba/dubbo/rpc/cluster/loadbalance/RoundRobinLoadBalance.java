@@ -58,7 +58,7 @@ public class RoundRobinLoadBalance extends AbstractLoadBalance {
             sequences.putIfAbsent(key, new AtomicPositiveInteger());
             sequence = sequences.get(key);
         }
-        int currentSequence = sequence.getAndIncrement();
+        int currentSequence = sequence.getAndIncrement(); // 每次执行doSelect()方法时sequence的值 加一。每一次把来自用户的请求轮流分配给内部中的服务器，从1开始，直到N(内部服务器个数)，然后重新开始循环。
         if (maxWeight > 0 && minWeight < maxWeight) { // 权重不一样
             int mod = currentSequence % weightSum;
             for (int i = 0; i < maxWeight; i++) {
@@ -75,7 +75,7 @@ public class RoundRobinLoadBalance extends AbstractLoadBalance {
                 }
             }
         }
-        // Round robin 取模轮循
+        // Round robin 取模
         return invokers.get(currentSequence % length);
     }
 

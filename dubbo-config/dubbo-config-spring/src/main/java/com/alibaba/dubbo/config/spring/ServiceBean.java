@@ -116,9 +116,9 @@ public class ServiceBean<T> extends ServiceConfig<T> implements InitializingBean
     public void onApplicationEvent(ContextRefreshedEvent event) {
         if (isDelay() && !isExported() && !isUnexported()) {
             if (logger.isInfoEnabled()) {
-                logger.info("The service ready on spring started. service: " + getInterface());
+                logger.info("The service ready on spring started. service: " + getInterface());// ApplicationListener的onApplicationEvent监听spring容器初始化完成
             }
-            export();
+            export(); // 将Invoker根据协议Protocol进行export转换成 Exporter
         }
     }
 

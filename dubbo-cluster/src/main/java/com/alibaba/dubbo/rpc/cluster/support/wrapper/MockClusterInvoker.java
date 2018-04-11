@@ -64,20 +64,20 @@ public class MockClusterInvoker<T> implements Invoker<T> {
     public Result invoke(Invocation invocation) throws RpcException {
         Result result = null;
 
-        String value = directory.getUrl().getMethodParameter(invocation.getMethodName(), Constants.MOCK_KEY, Boolean.FALSE.toString()).trim();
-        if (value.length() == 0 || value.equalsIgnoreCase("false")) {
+        String value = directory.getUrl().getMethodParameter(invocation.getMethodName(), Constants.MOCK_KEY, Boolean.FALSE.toString()).trim();//获取服务降级mock参数值
+        if (value.length() == 0 || value.equalsIgnoreCase("false")) { //正常情况：value.length()==0说明服务未使用 服务降级mock
             //no mock
-            result = this.invoker.invoke(invocation);
-        } else if (value.startsWith("force")) {
+            result = this.invoker.invoke(invocation);// 则消费方直接发起该服务方法的远程调用，调用失败会抛出异常
+        } else if (value.startsWith("force")) { //如果服务使用了 服务降级，且是 服务屏蔽 mock=force:return+null
             if (logger.isWarnEnabled()) {
                 logger.info("force-mock: " + invocation.getMethodName() + " force-mock enabled , url : " + directory.getUrl());
             }
             //force:direct mock
-            result = doMockInvoke(invocation, null);
+            result = doMockInvoke(invocation, null);//消费方对该服务的方法调用直接返回null值，不发起远程调用。用来屏蔽不重要服务不可用时对调用方的影响
         } else {
-            //fail-mock
+            //fail-mock 服务使用了服务降级，且是 服务容错 mock=fail:return+null
             try {
-                result = this.invoker.invoke(invocation);
+                result = this.invoker.invoke(invocation);// 消费方对该服务的方法调用失败后，不抛异常，而是返回null值，。用来容忍不重要服务不稳定时对调用方的影响
             } catch (RpcException e) {
                 if (e.isBiz()) {
                     throw e;

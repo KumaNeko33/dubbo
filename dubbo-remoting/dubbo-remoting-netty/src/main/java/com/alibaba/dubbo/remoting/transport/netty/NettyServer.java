@@ -56,13 +56,13 @@ public class NettyServer extends AbstractServer implements Server {
     private ServerBootstrap bootstrap;
 
     private org.jboss.netty.channel.Channel channel;
-
+    //在super调用父类构造函数过程中，会调用NettyServer的doOpen()方法
     public NettyServer(URL url, ChannelHandler handler) throws RemotingException {
         super(url, ChannelHandlers.wrap(handler, ExecutorUtil.setThreadName(url, SERVER_THREAD_POOL_NAME)));
     }
 
     @Override
-    protected void doOpen() throws Throwable {
+    protected void doOpen() throws Throwable { //打开Socket监听端口，准备接收消息
         NettyHelper.setNettyLoggerFactory();
         ExecutorService boss = Executors.newCachedThreadPool(new NamedThreadFactory("NettyServerBoss", true));
         ExecutorService worker = Executors.newCachedThreadPool(new NamedThreadFactory("NettyServerWorker", true));
@@ -89,7 +89,7 @@ public class NettyServer extends AbstractServer implements Server {
             }
         });
         // bind
-        channel = bootstrap.bind(getBindAddress());
+        channel = bootstrap.bind(getBindAddress());//绑定地址端口
     }
 
     @Override

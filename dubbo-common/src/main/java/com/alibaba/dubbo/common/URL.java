@@ -712,16 +712,16 @@ public final class URL implements Serializable {
 
     public int getMethodParameter(String method, String key, int defaultValue) {
         String methodKey = method + "." + key;
-        Number n = getNumbers().get(methodKey);
+        Number n = getNumbers().get(methodKey); // 查询缓存numbers（是一个ConcurrentHashMap）中是否有值
         if (n != null) {
-            return n.intValue();
+            return n.intValue(); // 缓存中有值则直接返回缓存中的值
         }
         String value = getMethodParameter(method, key);
         if (value == null || value.length() == 0) {
-            return defaultValue;
+            return defaultValue; // 如果method设置过key，则返回传入的默认值defaultValue
         }
         int i = Integer.parseInt(value);
-        getNumbers().put(methodKey, i);
+        getNumbers().put(methodKey, i); // 如果method设置过key，则存入URL的作为缓存的numbers的ConcurrentHashMap中
         return i;
     }
 

@@ -31,8 +31,11 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 
 /**
- * ConsistentHashLoadBalance
- *
+ * ConsistentHashLoadBalance 一致性hash
+ * 相同参数的请求总是发到同一提供者
+ * 当某一天提供者挂掉时，原本发往该提供者的请求，会基于虚拟节点，平摊到其他提供者，不会引起剧烈变动
+ * 缺省只对一个参数Hash，如要修改，请配置
+ * 缺省用160个虚拟节点，如有修改，请配置
  */
 public class ConsistentHashLoadBalance extends AbstractLoadBalance {
 
@@ -45,7 +48,7 @@ public class ConsistentHashLoadBalance extends AbstractLoadBalance {
         int identityHashCode = System.identityHashCode(invokers);
         ConsistentHashSelector<T> selector = (ConsistentHashSelector<T>) selectors.get(key);
         if (selector == null || selector.identityHashCode != identityHashCode) {
-            selectors.put(key, new ConsistentHashSelector<T>(invokers, invocation.getMethodName(), identityHashCode));
+            selectors.put(key, new ConsistentHashSelector<T>(invokers, invocation.getMethodName(), identityHashCode)); // 创建一致性Hash环
             selector = (ConsistentHashSelector<T>) selectors.get(key);
         }
         return selector.select(invocation);
@@ -100,9 +103,9 @@ public class ConsistentHashLoadBalance extends AbstractLoadBalance {
         }
 
         private Invoker<T> selectForKey(long hash) {
-            Map.Entry<Long, Invoker<T>> entry = virtualInvokers.tailMap(hash, true).firstEntry();
+            Map.Entry<Long, Invoker<T>> entry = virtualInvokers.tailMap(hash, true).firstEntry();//TreeMap本身提供了一个tailMap(K fromKey)方法，支持从红黑树中查找比fromKey大的值的集合，但并不需要遍历整个数据结构
         	if (entry == null) {
-        		entry = virtualInvokers.firstEntry();
+        		entry = virtualInvokers.firstEntry(); // 如果entry为null则返回一致性Hash环的第一个节点
         	}
         	return entry.getValue();
         }

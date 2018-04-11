@@ -104,9 +104,10 @@ public class ZookeeperRegistry extends FailbackRegistry {
             logger.warn("Failed to close zookeeper client " + getUrl() + ", cause: " + e.getMessage(), e);
         }
     }
-
+    // 注册服务
     protected void doRegister(URL url) {
         try {
+            // 创建zookeeper节点，zookeeper中的节点是有生命周期的，具体生命周期取决于节点的类型，节点主要分为持久节点（Persistent)和临时节点(Ephemeral)，还有时序节点（Sequential)
             zkClient.create(toUrlPath(url), url.getParameter(Constants.DYNAMIC_KEY, true));
         } catch (Throwable e) {
             throw new RpcException("Failed to register " + url + " to zookeeper " + getUrl() + ", cause: " + e.getMessage(), e);
@@ -123,7 +124,7 @@ public class ZookeeperRegistry extends FailbackRegistry {
 
     protected void doSubscribe(final URL url, final NotifyListener listener) {
         try {
-            if (Constants.ANY_VALUE.equals(url.getServiceInterface())) {
+            if (Constants.ANY_VALUE.equals(url.getServiceInterface())) { //如果url配置的interface = "*"
                 String root = toRootPath();
                 ConcurrentMap<NotifyListener, ChildListener> listeners = zkListeners.get(url);
                 if (listeners == null) {
@@ -146,8 +147,8 @@ public class ZookeeperRegistry extends FailbackRegistry {
                     });
                     zkListener = listeners.get(listener);
                 }
-                zkClient.create(root, false);
-                List<String> services = zkClient.addChildListener(root, zkListener);
+                zkClient.create(root, false);//创建该接口配置信息的持久节点
+                List<String> services = zkClient.addChildListener(root, zkListener);//持久节点添加 监听器
                 if (services != null && !services.isEmpty()) {
                     for (String service : services) {
                         service = URL.decode(service);
@@ -157,29 +158,37 @@ public class ZookeeperRegistry extends FailbackRegistry {
                     }
                 }
             } else {
+                /**
+                 * ConcurrentMap<URL, ConcurrentMap<NotifyListener, ChildListener>> zkListeners
+                 * 1 根据url从zkListeners获取ConcurrentMap<NotifyListener, ChildListener> listeners，没有就创建
+                 * 2 根据listener从ConcurrentMap<NotifyListener, ChildListener> listeners获取ChildListener，没有就创建（创建的ChildListener用来监听子节点的变化，是后面的通过dubbo监控平台 动态配置来改变接口的一些配置的原理）
+                 * 原理就是：dubbo监控平台动态配置，其实是对 zookeeper中节点信息进行修改，然后会通过ChildListener监听事件回调FailbackRegistry的notify方法让 invoker重新 export
+                 * 3 创建path持久化节点
+                 * 4 创建path子节点监听器
+                 */
                 List<URL> urls = new ArrayList<URL>();
                 for (String path : toCategoriesPath(url)) {
-                    ConcurrentMap<NotifyListener, ChildListener> listeners = zkListeners.get(url);
+                    ConcurrentMap<NotifyListener, ChildListener> listeners = zkListeners.get(url);//根据url从zkListeners获取ConcurrentMap<NotifyListener, ChildListener>，没有就创建
                     if (listeners == null) {
-                        zkListeners.putIfAbsent(url, new ConcurrentHashMap<NotifyListener, ChildListener>());
+                        zkListeners.putIfAbsent(url, new ConcurrentHashMap<NotifyListener, ChildListener>());//putIfAbsent(key, value)如果key位置没有value或value==null，则设置key位置的值为新value并返回旧值，如果有值则不进行赋值操作直接返回旧值
                         listeners = zkListeners.get(url);
                     }
-                    ChildListener zkListener = listeners.get(listener);
+                    ChildListener zkListener = listeners.get(listener);//根据listener从ConcurrentMap<NotifyListener, ChildListener>获取ChildListener，没有就创建（创建的ChildListener用来监听子节点的变化）
                     if (zkListener == null) {
-                        listeners.putIfAbsent(listener, new ChildListener() {
+                        listeners.putIfAbsent(listener, new ChildListener() { // 监听回调的地址,即回调给FailbackRegistry中的notify
                             public void childChanged(String parentPath, List<String> currentChilds) {
                                 ZookeeperRegistry.this.notify(url, listener, toUrlsWithEmpty(url, parentPath, currentChilds));
                             }
                         });
                         zkListener = listeners.get(listener);
                     }
-                    zkClient.create(path, false);
-                    List<String> children = zkClient.addChildListener(path, zkListener);
+                    zkClient.create(path, false);// 创建该接口信息的持久节点
+                    List<String> children = zkClient.addChildListener(path, zkListener);// 给持久节点添加 监听器
                     if (children != null) {
                         urls.addAll(toUrlsWithEmpty(url, path, children));
                     }
                 }
-                notify(url, listener, urls);
+                notify(url, listener, urls);//更新新的服务信息
             }
         } catch (Throwable e) {
             throw new RpcException("Failed to subscribe " + url + " to zookeeper " + getUrl() + ", cause: " + e.getMessage(), e);

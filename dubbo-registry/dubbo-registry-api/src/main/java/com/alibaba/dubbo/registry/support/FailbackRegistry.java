@@ -62,10 +62,10 @@ public abstract class FailbackRegistry extends AbstractRegistry {
         int retryPeriod = url.getParameter(Constants.REGISTRY_RETRY_PERIOD_KEY, Constants.DEFAULT_REGISTRY_RETRY_PERIOD);
         this.retryFuture = retryExecutor.scheduleWithFixedDelay(new Runnable() {
             public void run() {
-                // Check and connect to the registry
+                // 检测并连接注册中心 Check and connect to the registry
                 try {
-                    retry();
-                } catch (Throwable t) { // Defensive fault tolerance
+                    retry();//使用线程池 定时的 检测并连接注册中心，如果失败了就重连
+                } catch (Throwable t) { // 防御性容错 Defensive fault tolerance
                     logger.error("Unexpected error occur at failed retry, cause: " + t.getMessage(), t);
                 }
             }
@@ -126,12 +126,11 @@ public abstract class FailbackRegistry extends AbstractRegistry {
         failedRegistered.remove(url);
         failedUnregistered.remove(url);
         try {
-            // Sending a registration request to the server side
+            // 发送一个注册请求到 服务端 Sending a registration request to the server side
             doRegister(url);
-        } catch (Exception e) {
+        } catch (Exception e) { //注册服务出现异常
             Throwable t = e;
-
-            // If the startup detection is opened, the Exception is thrown directly.
+            // 如果启动检查已经打开即配置了参数check=true，则直接抛出异常 If the startup detection is opened, the Exception is thrown directly.
             boolean check = getUrl().getParameter(Constants.CHECK_KEY, true)
                     && url.getParameter(Constants.CHECK_KEY, true)
                     && !Constants.CONSUMER_PROTOCOL.equals(url.getProtocol());
@@ -144,8 +143,7 @@ public abstract class FailbackRegistry extends AbstractRegistry {
             } else {
                 logger.error("Failed to register " + url + ", waiting for retry, cause: " + t.getMessage(), t);
             }
-
-            // Record a failed registration request to a failed list, retry regularly
+            // 记录失败的注册请求到失败列表failedRegistered中，并用定时任务线程池定时检测重试 Record a failed registration request to a failed list, retry regularly
             failedRegistered.add(url);
         }
     }
@@ -256,7 +254,7 @@ public abstract class FailbackRegistry extends AbstractRegistry {
             throw new IllegalArgumentException("notify listener == null");
         }
         try {
-            doNotify(url, listener, urls);
+            doNotify(url, listener, urls);//更新本地缓存的zookeeper信息
         } catch (Exception t) {
             // Record a failed registration request to a failed list, retry regularly
             Map<NotifyListener, List<URL>> listeners = failedNotified.get(url);
@@ -302,7 +300,7 @@ public abstract class FailbackRegistry extends AbstractRegistry {
 
     // Retry the failed actions
     protected void retry() {
-        if (!failedRegistered.isEmpty()) {
+        if (!failedRegistered.isEmpty()) { //检测是否有失败注册连接
             Set<URL> failed = new HashSet<URL>(failedRegistered);
             if (failed.size() > 0) {
                 if (logger.isInfoEnabled()) {
@@ -311,7 +309,7 @@ public abstract class FailbackRegistry extends AbstractRegistry {
                 try {
                     for (URL url : failed) {
                         try {
-                            doRegister(url);
+                            doRegister(url);//重新连接注册中心并注册
                             failedRegistered.remove(url);
                         } catch (Throwable t) { // Ignore all the exceptions and wait for the next retry
                             logger.warn("Failed to retry register " + failed + ", waiting for again, cause: " + t.getMessage(), t);
@@ -359,7 +357,7 @@ public abstract class FailbackRegistry extends AbstractRegistry {
                         Set<NotifyListener> listeners = entry.getValue();
                         for (NotifyListener listener : listeners) {
                             try {
-                                doSubscribe(url, listener);
+                                doSubscribe(url, listener);//重新订阅服务
                                 listeners.remove(listener);
                             } catch (Throwable t) { // Ignore all the exceptions and wait for the next retry
                                 logger.warn("Failed to retry subscribe " + failed + ", waiting for again, cause: " + t.getMessage(), t);

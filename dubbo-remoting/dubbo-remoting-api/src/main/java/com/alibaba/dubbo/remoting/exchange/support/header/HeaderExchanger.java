@@ -39,6 +39,9 @@ public class HeaderExchanger implements Exchanger {
     }
 
     public ExchangeServer bind(URL url, ExchangeHandler handler) throws RemotingException {
+        // Transporters.bind(url, new DecodeHandler(new HanderExchangeHandler(handler));使用getTransporter().bind(url, handler)获取配置的Transporter(默认NettyTransporter)绑定url和处理器
+        // Transporters.bind方法返回一个 Server对象，默认是NettyTransporter.bind(url, handler)返回NettyServer
+//        HeaderExchangeServer包装实例NettyServer并设置参数 心跳和心跳时间，心跳不为0则开始心跳
         return new HeaderExchangeServer(Transporters.bind(url, new DecodeHandler(new HeaderExchangeHandler(handler))));
     }
 

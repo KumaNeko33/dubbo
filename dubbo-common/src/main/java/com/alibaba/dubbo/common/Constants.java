@@ -72,7 +72,7 @@ public class Constants {
     public static final String $INVOKE = "$invoke";
 
     public static final String $ECHO = "$echo";
-
+    //availableProcessors()向Java返回可用处理器的数目，该值在特定的虚拟机调用期间可能发生更改
     public static final int DEFAULT_IO_THREADS = Math.min(Runtime.getRuntime().availableProcessors() + 1, 32);
 
     public static final String DEFAULT_PROXY = "javassist";

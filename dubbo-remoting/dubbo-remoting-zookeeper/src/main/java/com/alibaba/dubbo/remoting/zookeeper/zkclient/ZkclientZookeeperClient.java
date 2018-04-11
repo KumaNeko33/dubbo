@@ -38,7 +38,7 @@ public class ZkclientZookeeperClient extends AbstractZookeeperClient<IZkChildLis
     public ZkclientZookeeperClient(URL url) {
         super(url);
         client = new ZkClientWrapper(url.getBackupAddress(), 30000);
-        client.addListener(new IZkStateListener() {
+        client.addListener(new IZkStateListener() { //监听和处理
             public void handleStateChanged(KeeperState state) throws Exception {
                 ZkclientZookeeperClient.this.state = state;
                 if (state == KeeperState.Disconnected) {
@@ -101,6 +101,12 @@ public class ZkclientZookeeperClient extends AbstractZookeeperClient<IZkChildLis
         client.close();
     }
 
+    /**
+     * 很简单，就是创建一个监听path子节点的watcher，当path下有子节点变化时，调用listener（即传入的ZookeeperRegistry的内部类ChildListener实例的childChanged(String parentPath, List<String> currentChilds)方法）。
+     * @param path
+     * @param listener
+     * @return
+     */
     public IZkChildListener createTargetChildListener(String path, final ChildListener listener) {
         return new IZkChildListener() {
             public void handleChildChange(String parentPath, List<String> currentChilds)
@@ -110,6 +116,12 @@ public class ZkclientZookeeperClient extends AbstractZookeeperClient<IZkChildLis
         };
     }
 
+    /**
+     * 当path节点下的子节点发生变化的时候，会首先调用TargetChildListener的process(WatchedEvent event)方法，在该方法中又会调用ChildListener实例的childChanged(String parentPath, List<String> currentChilds)方法
+     * @param path
+     * @param listener
+     * @return
+     */
     public List<String> addTargetChildListener(String path, final IZkChildListener listener) {
         return client.subscribeChildChanges(path, listener);
     }
