@@ -53,7 +53,7 @@ public class Transporters {
         } else {
             handler = new ChannelHandlerDispatcher(handlers);
         }
-        return getTransporter().bind(url, handler);//getTransporter()获取配置的Transporter(默认NettyTransporter); .bind(url, handler)绑定url和处理器
+        return getTransporter().bind(url, handler);//getTransporter()获取spi配置的Transporter(默认NettyTransporter); .bind(url, handler)绑定url和处理器
     }
 
     public static Client connect(String url, ChannelHandler... handler) throws RemotingException {

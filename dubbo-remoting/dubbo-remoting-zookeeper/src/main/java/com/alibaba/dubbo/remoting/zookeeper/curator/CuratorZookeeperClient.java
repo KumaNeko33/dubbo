@@ -40,7 +40,7 @@ public class CuratorZookeeperClient extends AbstractZookeeperClient<CuratorWatch
 
     private final CuratorFramework client;
 
-    public CuratorZookeeperClient(URL url) {
+    public CuratorZookeeperClient(URL url) {//一些监听和处理
         super(url);
         try {
             CuratorFrameworkFactory.Builder builder = CuratorFrameworkFactory.builder()

@@ -87,11 +87,11 @@ public class ProtocolFilterWrapper implements Protocol {
     }
 
     public <T> Exporter<T> export(Invoker<T> invoker) throws RpcException {
-        if (Constants.REGISTRY_PROTOCOL.equals(invoker.getUrl().getProtocol())) {
-            return protocol.export(invoker);//直接将invoker转换成Exporter
+        if (Constants.REGISTRY_PROTOCOL.equals(invoker.getUrl().getProtocol())) { //判断invoker的url的协议是不是registry，这里本地暴露是injvm，远程暴露是registry
+            return protocol.export(invoker);//直接将invoker转换成Exporter，这里的protocol实例是 ProtocolListenWrapper
         }
-        //将Invoker转换成Exporter前需要执行buildInvokerChain过滤器, 这里的protocol实例是 DubboProtocol
-        return protocol.export(buildInvokerChain(invoker, Constants.SERVICE_FILTER_KEY, Constants.PROVIDER));//每个类中protocol存储的实例不同，所以protocol.export()的实际调用者 根据注入的protocol实例确定
+        //将Invoker转换成Exporter前需要执行buildInvokerChain过滤器, 本地暴露这里的protocol实例是 ProtocolListenWrapper，远程暴露url变成dubbo开头后，到这一步，protocol实例也是 ProtocolListenWrapper
+        return protocol.export(buildInvokerChain(invoker, Constants.SERVICE_FILTER_KEY, Constants.PROVIDER));//每个类中protocol存储的实例不同，所以protocol.export()的实际调用者 根据注入的protocol实例确定，当远程暴露第二次进入这个方法url以dubbo开头时这个protocol = DubboProtocol
     }
 
     public <T> Invoker<T> refer(Class<T> type, URL url) throws RpcException {

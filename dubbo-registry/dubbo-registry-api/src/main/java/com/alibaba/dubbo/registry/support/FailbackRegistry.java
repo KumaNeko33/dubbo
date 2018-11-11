@@ -57,10 +57,10 @@ public abstract class FailbackRegistry extends AbstractRegistry {
 
     private final ConcurrentMap<URL, Map<NotifyListener, List<URL>>> failedNotified = new ConcurrentHashMap<URL, Map<NotifyListener, List<URL>>>();
 
-    public FailbackRegistry(URL url) {
+    public FailbackRegistry(URL url) {//父类初始化完成并执行完super(url)才 开始子类的初始化
         super(url);
-        int retryPeriod = url.getParameter(Constants.REGISTRY_RETRY_PERIOD_KEY, Constants.DEFAULT_REGISTRY_RETRY_PERIOD);
-        this.retryFuture = retryExecutor.scheduleWithFixedDelay(new Runnable() {
+        int retryPeriod = url.getParameter(Constants.REGISTRY_RETRY_PERIOD_KEY, Constants.DEFAULT_REGISTRY_RETRY_PERIOD);//retryPeriod=5000
+        this.retryFuture = retryExecutor.scheduleWithFixedDelay(new Runnable() {//Excutors.newScheduleThreadPool(1,线程工厂，是守护线程)创建定时任务连接池，方法scheduleWithFixedDelay(Runnable runnable)每5秒定时 检测并连接注册中心
             public void run() {
                 // 检测并连接注册中心 Check and connect to the registry
                 try {
@@ -123,10 +123,10 @@ public abstract class FailbackRegistry extends AbstractRegistry {
     @Override
     public void register(URL url) {
         super.register(url);
-        failedRegistered.remove(url);
+        failedRegistered.remove(url);//失败列表failedRegistered移除这个url
         failedUnregistered.remove(url);
         try {
-            // 发送一个注册请求到 服务端 Sending a registration request to the server side
+            // 模板方法：生成节点，发送一个注册请求到 服务端 Sending a registration request to the server side
             doRegister(url);
         } catch (Exception e) { //注册服务出现异常
             Throwable t = e;
@@ -183,7 +183,7 @@ public abstract class FailbackRegistry extends AbstractRegistry {
         super.subscribe(url, listener);
         removeFailedSubscribed(url, listener);
         try {
-            // Sending a subscription request to the server side
+            // 模板方法之 发送一个订阅请求到服务端 Sending a subscription request to the server side
             doSubscribe(url, listener);
         } catch (Exception e) {
             Throwable t = e;
@@ -309,7 +309,7 @@ public abstract class FailbackRegistry extends AbstractRegistry {
                 try {
                     for (URL url : failed) {
                         try {
-                            doRegister(url);//重新连接注册中心并注册
+                            doRegister(url);//模板方法之重新连接注册中心并注册
                             failedRegistered.remove(url);
                         } catch (Throwable t) { // Ignore all the exceptions and wait for the next retry
                             logger.warn("Failed to retry register " + failed + ", waiting for again, cause: " + t.getMessage(), t);
@@ -357,7 +357,7 @@ public abstract class FailbackRegistry extends AbstractRegistry {
                         Set<NotifyListener> listeners = entry.getValue();
                         for (NotifyListener listener : listeners) {
                             try {
-                                doSubscribe(url, listener);//重新订阅服务
+                                doSubscribe(url, listener);//模板方法之重新订阅服务
                                 listeners.remove(listener);
                             } catch (Throwable t) { // Ignore all the exceptions and wait for the next retry
                                 logger.warn("Failed to retry subscribe " + failed + ", waiting for again, cause: " + t.getMessage(), t);
@@ -439,7 +439,7 @@ public abstract class FailbackRegistry extends AbstractRegistry {
         }
     }
 
-    // ==== Template method ====
+    // ==== 模板方法 Template method ====
 
     protected abstract void doRegister(URL url);
 

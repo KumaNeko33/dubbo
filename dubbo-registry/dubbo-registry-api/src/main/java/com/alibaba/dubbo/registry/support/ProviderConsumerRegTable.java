@@ -30,18 +30,18 @@ import java.util.concurrent.ConcurrentHashMap;
  * @date 2017/11/23
  */
 public class ProviderConsumerRegTable {
-    public static ConcurrentHashMap<String, Set<ProviderInvokerWrapper>> providerInvokers = new ConcurrentHashMap<String, Set<ProviderInvokerWrapper>>();
-    public static ConcurrentHashMap<String, Set<ConsumerInvokerWrapper>> consumerInvokers = new ConcurrentHashMap<String, Set<ConsumerInvokerWrapper>>();
+    public static ConcurrentHashMap<String, Set<ProviderInvokerWrapper>> providerInvokers = new ConcurrentHashMap<String, Set<ProviderInvokerWrapper>>();//提供者 invokers
+    public static ConcurrentHashMap<String, Set<ConsumerInvokerWrapper>> consumerInvokers = new ConcurrentHashMap<String, Set<ConsumerInvokerWrapper>>();//消费者 invokers
 
     public static void registerProvider(Invoker invoker, URL registryUrl, URL providerUrl) {
-        ProviderInvokerWrapper wrapperInvoker = new ProviderInvokerWrapper(invoker, registryUrl, providerUrl);
-        String serviceUniqueName = providerUrl.getServiceKey();
-        Set<ProviderInvokerWrapper> invokers = providerInvokers.get(serviceUniqueName);
+        ProviderInvokerWrapper wrapperInvoker = new ProviderInvokerWrapper(invoker, registryUrl, providerUrl);//originUrl = registry://127.0.0.1:2181/com.alibaba.dubbo.registry.RegistryService?.. registryUrl=zookeeper://127.0.0.1:2181/com.alibaba.dubbo.registry.RegistryService?.. providerUrl=dubbo://192.168.199.110:20880/com.alibaba.dubbo.demo.DemoService?anyhost=true&application=demo-provider&dubbo=2.0.0&generic=false&interface=com.alibaba.dubbo.demo.DemoService&methods=sayHello&pid=7264&side=provider&timestamp=1524143422558
+        String serviceUniqueName = providerUrl.getServiceKey();//com.alibaba.dubbo.demo.DemoService
+        Set<ProviderInvokerWrapper> invokers = providerInvokers.get(serviceUniqueName);//null
         if (invokers == null) {
             providerInvokers.putIfAbsent(serviceUniqueName, new ConcurrentHashSet<ProviderInvokerWrapper>());
             invokers = providerInvokers.get(serviceUniqueName);
         }
-        invokers.add(wrapperInvoker);
+        invokers.add(wrapperInvoker);//将invoker,registryUrl和providerUrl封装成ProviderInvokerWrapper后保存到 提供者invokers
     }
 
     public static Set<ProviderInvokerWrapper> getProviderInvoker(String serviceUniqueName) {

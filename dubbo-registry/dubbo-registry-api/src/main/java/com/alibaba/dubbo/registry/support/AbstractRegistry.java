@@ -77,22 +77,22 @@ public abstract class AbstractRegistry implements Registry {
 
     public AbstractRegistry(URL url) {
         setUrl(url);
-        // Start file save timer
+        // 启动文件保存定时器
         syncSaveFile = url.getParameter(Constants.REGISTRY_FILESAVE_SYNC_KEY, false);
-        // zookeeper注册信息本地缓存 文件路径
+        // zookeeper注册信息本地缓存 文件路径C:\Users\Administrator/.dubbo/dubbo-registry-demo-provider-127.0.0.1:2181.cache
         String filename = url.getParameter(Constants.FILE_KEY, System.getProperty("user.home") + "/.dubbo/dubbo-registry-" + url.getParameter(Constants.APPLICATION_KEY) + "-" + url.getAddress() + ".cache");
         File file = null;
         if (ConfigUtils.isNotEmpty(filename)) {
             file = new File(filename);
             if (!file.exists() && file.getParentFile() != null && !file.getParentFile().exists()) {
-                if (!file.getParentFile().mkdirs()) {
+                if (!file.getParentFile().mkdirs()) { // 创建文件所在的文件夹
                     throw new IllegalArgumentException("Invalid registry store file " + file + ", cause: Failed to create directory " + file.getParentFile() + "!");
                 }
             }
         }
         this.file = file;
-        loadProperties();// 缓存zookeeper注册信息到file文件，并转成properties对象方便使用
-        notify(url.getBackupUrls());
+        loadProperties();// 读取file文件中的zookeeper注册信息并转成properties对象方便使用
+        notify(url.getBackupUrls());//这个notify方法会直接返回，因为url.getBackupUrls()为null,而notif方法第一行代码为if (urls == null || urls.isEmpty()) return;
     }
 
     protected static List<URL> filterEmpty(URL url, List<URL> urls) {
@@ -196,7 +196,7 @@ public abstract class AbstractRegistry implements Registry {
             if (version < lastCacheChanged.get()) {
                 return;
             } else {
-                registryCacheExecutor.execute(new SaveProperties(lastCacheChanged.incrementAndGet()));
+                registryCacheExecutor.execute(new SaveProperties(lastCacheChanged.incrementAndGet()));//registryCacheExecutor名字为DubboSaveRegistryCache的后台线程的FixedThreadPool，用于执行file文件的写入操作
             }
             logger.warn("Failed to save registry store file, cause: " + e.getMessage(), e);
         }
@@ -207,9 +207,9 @@ public abstract class AbstractRegistry implements Registry {
             InputStream in = null;
             try {
                 in = new FileInputStream(file);
-                properties.load(in);//将配置写入 file，并转换成properties对象方便使用
+                properties.load(in);//读取file缓存文件配置，并转换成properties对象方便使用
                 if (logger.isInfoEnabled()) {
-                    logger.info("Load registry store file " + file + ", data: " + properties);
+                    logger.info("Load registry store file " + file + ", data: " + properties);//[19/04/18 11:40:35:035 CST] main  INFO zookeeper.ZookeeperRegistry:  [DUBBO] Load registry store file C:\Users\Administrator\.dubbo\dubbo-registry-demo-provider-127.0.0.1:2181.cache, data: {com.alibaba.dubbo.demo.DemoService=empty://192.168.199.110:20880/com.alibaba.dubbo.demo.DemoService?anyhost=true&application=demo-provider&category=configurators&check=false&dubbo=2.0.0&generic=false&interface=com.alibaba.dubbo.demo.DemoService&methods=sayHello&pid=24064&side=provider&timestamp=1523276354183}, dubbo version: 2.0.0, current host: 192.168.199.110
                 }
             } catch (Throwable e) {
                 logger.warn("Failed to load registry store file " + file, e);
@@ -279,9 +279,9 @@ public abstract class AbstractRegistry implements Registry {
             throw new IllegalArgumentException("register url == null");
         }
         if (logger.isInfoEnabled()) {
-            logger.info("Register: " + url);
+            logger.info("Register: " + url);//[20/04/18 08:10:49:049 CST] main  INFO zookeeper.ZookeeperRegistry:  [DUBBO] Register: dubbo://192.168.199.110:20880/com.alibaba.dubbo.demo.DemoService?anyhost=true&application=demo-provider&dubbo=2.0.0&generic=false&interface=com.alibaba.dubbo.demo.DemoService&methods=sayHello&pid=7264&side=provider&timestamp=1524143422558, dubbo version: 2.0.0, current host: 192.168.199.110
         }
-        registered.add(url);
+        registered.add(url);//注册者set集合 保存url
     }
 
     public void unregister(URL url) {

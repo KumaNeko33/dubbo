@@ -33,9 +33,9 @@ class InjvmExporter<T> extends AbstractExporter<T> {
 
     InjvmExporter(Invoker<T> invoker, String key, Map<String, Exporter<?>> exporterMap) {
         super(invoker);
-        this.key = key;
-        this.exporterMap = exporterMap;
-        exporterMap.put(key, this);//使用exporterMap缓存exporter,key和value
+        this.key = key;//key = com.alibaba.dubbo.demo.DemoService
+        this.exporterMap = exporterMap;//exporterMap是AbstractProtocol中的参数，用于缓存invoker转换成的exporter
+        exporterMap.put(key, this);//使用exporterMap缓存exporter,key和value,this = interface com.alibaba.dubbo.demo.DemoService -> injvm://127.0.0.1/com.alibaba.dubbo.demo.DemoService?anyhost=true&application=demo-provider&bind.ip=192.168.18.1&bind.port=20880&dubbo=2.0.0&generic=false&interface=com.alibaba.dubbo.demo.DemoService&methods=sayHello&pid=2200&qos.port=22222&side=provider&timestamp=1523933644722
     }
 
     public void unexport() {

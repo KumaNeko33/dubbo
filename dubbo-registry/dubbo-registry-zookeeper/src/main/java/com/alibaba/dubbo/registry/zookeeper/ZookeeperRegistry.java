@@ -71,7 +71,7 @@ public class ZookeeperRegistry extends FailbackRegistry {
             public void stateChanged(int state) {
                 if (state == RECONNECTED) {
                     try {
-                        recover();
+                        recover();//监听 恢复？
                     } catch (Exception e) {
                         logger.error(e.getMessage(), e);
                     }

@@ -222,16 +222,16 @@ public class DubboProtocol extends AbstractProtocol {
     }
 
     public <T> Exporter<T> export(Invoker<T> invoker) throws RpcException {
-        URL url = invoker.getUrl();
+        URL url = invoker.getUrl();//dubbo://192.168.18.1:20880/com.alibaba.dubbo.demo.DemoService?anyhost=true&application=demo-provider&bind.ip=192.168.18.1&bind.port=20880&dubbo=2.0.0&generic=false&interface=com.alibaba.dubbo.demo.DemoService&methods=sayHello&pid=2200&qos.port=22222&side=provider&timestamp=1523933644722
 
         // 暴露服务 export service.
         String key = serviceKey(url);
         DubboExporter<T> exporter = new DubboExporter<T>(invoker, key, exporterMap);//将 Invoker转换成Exporter
-        exporterMap.put(key, exporter);//本地暴露也用到了，exporterMap缓存，保存转换后的exporter
+        exporterMap.put(key, exporter);//本地暴露也用到了，AbstractProtocol类中的exporterMap缓存，保存转换后的exporter
 
-        //export an stub service for dispatching event
-        Boolean isStubSupportEvent = url.getParameter(Constants.STUB_EVENT_KEY, Constants.DEFAULT_STUB_EVENT);
-        Boolean isCallbackservice = url.getParameter(Constants.IS_CALLBACK_SERVICE, false);
+        //为调度事件导出存根服务 export an stub service for dispatching event
+        Boolean isStubSupportEvent = url.getParameter(Constants.STUB_EVENT_KEY, Constants.DEFAULT_STUB_EVENT);//false
+        Boolean isCallbackservice = url.getParameter(Constants.IS_CALLBACK_SERVICE, false);//false
         if (isStubSupportEvent && !isCallbackservice) {
             String stubServiceMethods = url.getParameter(Constants.STUB_EVENT_METHODS_KEY);
             if (stubServiceMethods == null || stubServiceMethods.length() == 0) {
@@ -250,16 +250,16 @@ public class DubboProtocol extends AbstractProtocol {
     }
 
     private void openServer(URL url) {
-        // find server.
-        String key = url.getAddress();
-        //client can export a service which's only for server to invoke
+        // 找到服务 find server.
+        String key = url.getAddress();//192.168.199.110:20880
+        // client可以暴露一个只有server可以调用的服务 client can export a service which's only for server to invoke
         boolean isServer = url.getParameter(Constants.IS_SERVER_KEY, true);
         if (isServer) {
             ExchangeServer server = serverMap.get(key);
             if (server == null) {
                 serverMap.put(key, createServer(url));//key:192.168.18.1:20880 value：ExchangeServer； createServer(url)返回ExchangeServer的实现类HeaderExchangeServer，添加参数列表 如心跳，心跳时间
             } else {
-                // server supports reset, use together with override
+                // 服务支持reset,配合override功能使用 server supports reset, use together with override
                 server.reset(url);
             }
         }
@@ -278,7 +278,7 @@ public class DubboProtocol extends AbstractProtocol {
 
         url = url.addParameter(Constants.CODEC_KEY, DubboCodec.NAME);
         ExchangeServer server;
-        try {
+        try { //Exchanger交换层，如同 VO和 DO，用于传递数据或者说绑定数据关系
             server = Exchangers.bind(url, requestHandler);// 返回HeaderExchangeServer，添加参数列表，如心跳，心跳时间，其中getTransporter()获取的实例来源于配置，默认返回一个NettyTransporter
         } catch (RemotingException e) {
             throw new RpcException("Fail to start server(url: " + url + ") " + e.getMessage(), e);

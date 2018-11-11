@@ -47,14 +47,14 @@ public class ProtocolListenerWrapper implements Protocol {
     public int getDefaultPort() {
         return protocol.getDefaultPort();
     }
-
+    // 这个类中的protocol估计是 Protocol$Adaptive 中通过com.alibaba.dubbo.rpc.Protocol extension = (com.alibaba.dubbo.rpc.Protocol)ExtensionLoader.getExtensionLoader(com.alibaba.dubbo.rpc.Protocol.class).getExtension(extName);方法设置，extName=injvm时，protocol为InjvmProtocol;extName=registry时，protocol为RegistryProtocol;extName=dubbo时，protocol为DubboProtocol
     public <T> Exporter<T> export(Invoker<T> invoker) throws RpcException {
-        if (Constants.REGISTRY_PROTOCOL.equals(invoker.getUrl().getProtocol())) {
-            return protocol.export(invoker);
+        if (Constants.REGISTRY_PROTOCOL.equals(invoker.getUrl().getProtocol())) { //判断invoker的url的协议是不是registry，这里本地暴露是injvm，远程暴露是registry
+            return protocol.export(invoker);//远程暴露这里的protocol是 RegistryProtocol
         }
-        return new ListenerExporterWrapper<T>(protocol.export(invoker),//这里的protocol是
+        return new ListenerExporterWrapper<T>(protocol.export(invoker),//本地暴露这里的protocol是 InjvmProtocol，所以protocol.export(invoker)调用InjvmProtocol的export(invoker),返回InjvmExporter，远程暴露的url头从registry变成dubbo后到这一步，这时protocol是DubboProtocol
                 Collections.unmodifiableList(ExtensionLoader.getExtensionLoader(ExporterListener.class)
-                        .getActivateExtension(invoker.getUrl(), Constants.EXPORTER_LISTENER_KEY)));
+                        .getActivateExtension(invoker.getUrl(), Constants.EXPORTER_LISTENER_KEY)));// 配置exporter的监听类
     }
 
     public <T> Invoker<T> refer(Class<T> type, URL url) throws RpcException {

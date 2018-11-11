@@ -560,7 +560,11 @@ public class ExtensionLoader<T> {
         return classes;
     }
 
-    // synchronized in getExtensionClasses
+    /**
+     * 1 从@SPI注解中将默认值解析出来,并缓存到cachedDefaultName中
+     * 2 从SPI文件中获取extensionClass并存储到extensionClasses中,最后返回extensionClasses
+     * 注意：此方法已经getExtensionClasses方法同步过。
+     */
     private Map<String, Class<?>> loadExtensionClasses() {
         final SPI defaultAnnotation = type.getAnnotation(SPI.class);
         if (defaultAnnotation != null) {
@@ -582,6 +586,19 @@ public class ExtensionLoader<T> {
         return extensionClasses;
     }
 
+    /**
+     * 1 加载dir目录下的指定type名称的文件(例如:dubbo-2.5.5.jar中的/META-INF/dubbo/internal/com.alibaba.dubbo.common.extension.ExtensionFactory)
+     * 2 遍历该文件中的每一行
+     * (1)获取实现类key和value, 例如 name=spi, line=com.alibaba.dubbo.common.extension.factory.SpiExtensionFactory
+     * (2)根据line创建Class对象
+     * (3)将具有@Adaptive注解的实现类的Class对象放在cachedAdaptiveClass缓存中, 注意该缓存只能存放一个具有@Adaptive注解的实现类的Class对象,如果有两个满足条件,则抛异常
+     * 下面的都是对不含@Adaptive注解的实现类的Class对象:
+     * (4)查看是否具有含有一个type入参的构造器, 如果有（就是wrapper类）, 将当前的Class对象放置到cachedWrapperClasses缓存中
+     * (5)如果没有含有一个type入参的构造器, 获取无参构造器. 如果Class对象具有@Active注解, 将该对象以<实现类的key, active>存储起来
+     * (6)最后，将<Class对象, 实现类的key>存入cachedNames缓存,并将这些Class存入extensionClasses中。
+     * @param extensionClasses
+     * @param dir
+     */
     private void loadFile(Map<String, Class<?>> extensionClasses, String dir) {
         String fileName = dir + type.getName();
         try {

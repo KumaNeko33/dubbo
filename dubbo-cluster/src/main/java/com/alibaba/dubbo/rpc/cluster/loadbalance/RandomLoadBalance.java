@@ -38,7 +38,7 @@ public class RandomLoadBalance extends AbstractLoadBalance {
         int totalWeight = 0; // 权重总数 The sum of weights
         boolean sameWeight = true; // 一开始假设每个invoker拥有相同的权重 Every invoker has the same weight?
         for (int i = 0; i < length; i++) {
-            int weight = getWeight(invokers.get(i), invocation); // 获取每个invoker的权重，方法在AbstractLoadBalance中，默认100，通过参数weight配置
+            int weight = getWeight(invokers.get(i), invocation); // 获取每个invoker的权重，方法在AbstractLoadBalance中，没配置的话默认100，通过参数weight配置
             totalWeight += weight; // 遍历每个invoker的权重并计入总权重 Sum
             if (sameWeight && i > 0
                     && weight != getWeight(invokers.get(i - 1), invocation)) { // i > 0开始，如果i位置的权重不等于 i+1 位置的权重，则sameWeight=false

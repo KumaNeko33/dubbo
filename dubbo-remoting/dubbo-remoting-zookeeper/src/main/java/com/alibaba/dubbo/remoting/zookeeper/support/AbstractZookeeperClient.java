@@ -56,9 +56,9 @@ public abstract class AbstractZookeeperClient<TargetChildListener> implements Zo
     public void create(String path, boolean ephemeral) { //ephemeral朝生夕死的
         int i = path.lastIndexOf('/');
         if (i > 0) {
-            String parentPath = path.substring(0, i);
+            String parentPath = path.substring(0, i);//parentPath = /dubbo/com.alibaba.dubbo.demo.DemoService/providers
             if (!checkExists(parentPath)) { //调用子类ZkClientZookeeperClient的checkExists判断父节点路径存不存在
-                create(parentPath, false);//父节点路径不存在，则创建一个
+                create(parentPath, false);//父节点路径不存在，则创建一个持久节点
             }
         }
         if (ephemeral) { //ephemeral = false

@@ -155,11 +155,11 @@ public abstract class AbstractInterfaceConfig extends AbstractMethodConfig {
             }
         }
     }
-
+    //将配置的dubbo:registry标签 转换成 registry开头的url地址，如registry://127.0.0.1:2181/com.alibaba.dubbo.registry.RegistryService?application=demo-provider&dubbo=2.0.0&pid=2200&qos.port=22222&registry=zookeeper&timestamp=1523933276550
     protected List<URL> loadRegistries(boolean provider) {
         checkRegistry();
         List<URL> registryList = new ArrayList<URL>();
-        if (registries != null && !registries.isEmpty()) {
+        if (registries != null && !registries.isEmpty()) { //registries包含一个注册中心下 该应用配置的所有dubbo:registry ，如：<dubbo:registry address="zookeeper://127.0.0.1:2181" id="com.alibaba.dubbo.config.RegistryConfig" />
             for (RegistryConfig config : registries) { // 如果registries有多个说明有多个注册中心
                 String address = config.getAddress();
                 if (address == null || address.length() == 0) {

@@ -18,7 +18,7 @@ public class Transporter$Adaptive implements com.alibaba.dubbo.remoting.Transpor
         com.alibaba.dubbo.common.URL url = arg0;
         String extName = url.getParameter("server", url.getParameter("transporter", "netty"));// 默认网络传输层使用 netty
         if(extName == null) throw new IllegalStateException("Fail to get extension(com.alibaba.dubbo.remoting.Transporter) name from url(" + url.toString() + ") use keys([server, transporter])");
-        com.alibaba.dubbo.remoting.Transporter extension = (com.alibaba.dubbo.remoting.Transporter)ExtensionLoader.getExtensionLoader(com.alibaba.dubbo.remoting.Transporter.class).getExtension(extName);
+        com.alibaba.dubbo.remoting.Transporter extension = (com.alibaba.dubbo.remoting.Transporter)ExtensionLoader.getExtensionLoader(com.alibaba.dubbo.remoting.Transporter.class).getExtension(extName);// extName=netty
         return extension.bind(arg0, arg1);
     }
 }

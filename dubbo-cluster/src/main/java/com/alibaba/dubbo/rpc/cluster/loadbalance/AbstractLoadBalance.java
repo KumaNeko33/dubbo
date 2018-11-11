@@ -35,6 +35,14 @@ public abstract class AbstractLoadBalance implements LoadBalance {
         return ww < 1 ? 1 : (ww > weight ? weight : ww);
     }
 
+    /**
+     * 这里使用了模板方法设计模式，负载均衡算法select中调用的抽象方法doSelect的具体实现交由子类实现
+     * @param invokers   invokers.
+     * @param url        refer url
+     * @param invocation invocation.
+     * @param <T>
+     * @return
+     */
     public <T> Invoker<T> select(List<Invoker<T>> invokers, URL url, Invocation invocation) {
         if (invokers == null || invokers.isEmpty())
             return null;

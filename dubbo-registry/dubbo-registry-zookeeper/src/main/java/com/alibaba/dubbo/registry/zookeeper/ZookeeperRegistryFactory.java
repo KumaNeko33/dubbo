@@ -27,7 +27,7 @@ import com.alibaba.dubbo.remoting.zookeeper.ZookeeperTransporter;
  */
 public class ZookeeperRegistryFactory extends AbstractRegistryFactory {
 
-    private ZookeeperTransporter zookeeperTransporter;
+    private ZookeeperTransporter zookeeperTransporter;//这里是 ZookeeperTransporter$Adaptive
 
     public void setZookeeperTransporter(ZookeeperTransporter zookeeperTransporter) {
         this.zookeeperTransporter = zookeeperTransporter;

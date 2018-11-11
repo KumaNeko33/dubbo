@@ -33,7 +33,7 @@ public class JavassistProxyFactory extends AbstractProxyFactory {
     public <T> T getProxy(Invoker<T> invoker, Class<?>[] interfaces) {
         return (T) Proxy.getProxy(interfaces).newInstance(new InvokerInvocationHandler(invoker));
     }
-
+    //提供ProxyFactory$Adaptive传过来的参数 proxy = DemoServiceImpl, type = interface com.alibaba.dubbo.demo.DemoService, url = injvm://127.0.0.1/com.alibaba.dubbo.demo.DemoService?anyhost=true&application=demo-provider&bind.ip=192.168.18.1&bind.port=20880&dubbo=2.0.0&generic=false&interface=com.alibaba.dubbo.demo.DemoService&methods=sayHello&pid=2200&qos.port=22222&side=provider&timestamp=1523933644722
     public <T> Invoker<T> getInvoker(T proxy, Class<T> type, URL url) {
         // TODO Wrapper cannot handle this scenario correctly: the classname contains '$'
         final Wrapper wrapper = Wrapper.getWrapper(proxy.getClass().getName().indexOf('$') < 0 ? proxy.getClass() : type);

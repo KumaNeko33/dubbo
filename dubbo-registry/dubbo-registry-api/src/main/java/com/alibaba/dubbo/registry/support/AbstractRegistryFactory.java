@@ -79,7 +79,7 @@ public abstract class AbstractRegistryFactory implements RegistryFactory {
             LOCK.unlock();
         }
     }
-
+    //所有子类的getRegistry获取注册中心实例的操作都类似所以这个方法放到父类中作为模板方法，只是这个方法中根据url 生成具体注册中心实例Registry的代码 不同，则这部分代码使用子类自己的实现，父类只提供抽象方法
     public Registry getRegistry(URL url) {
         url = url.setPath(RegistryService.class.getName())
                 .addParameter(Constants.INTERFACE_KEY, RegistryService.class.getName())
@@ -92,7 +92,7 @@ public abstract class AbstractRegistryFactory implements RegistryFactory {
             if (registry != null) {
                 return registry;
             }
-            registry = createRegistry(url);
+            registry = createRegistry(url);//钩子方法，调用ZookeeperRegistryFactory的createRegistry（url)方法
             if (registry == null) {
                 throw new IllegalStateException("Can not create registry " + url);
             }

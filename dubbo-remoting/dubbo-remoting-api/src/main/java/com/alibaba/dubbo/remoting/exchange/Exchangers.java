@@ -67,7 +67,7 @@ public class Exchangers {
             throw new IllegalArgumentException("handler == null");
         }
         url = url.addParameterIfAbsent(Constants.CODEC_KEY, "exchange");
-        return getExchanger(url).bind(url, handler);//.bind(url, handler)返回一个HeaderExchangeServer并添加参数列表，如心跳河心跳时间
+        return getExchanger(url).bind(url, handler);//getExchanger(url)根据spi返回HeaderExchanger， .bind(url, handler)返回一个HeaderExchangeServer并通过NettyTranspoter绑定url和ChannelHandler并添加参数列表，如心跳和心跳时间
     }
 
     public static ExchangeClient connect(String url) throws RemotingException {
@@ -110,12 +110,12 @@ public class Exchangers {
     }
 
     public static Exchanger getExchanger(URL url) {
-        String type = url.getParameter(Constants.EXCHANGER_KEY, Constants.DEFAULT_EXCHANGER);
-        return getExchanger(type);
+        String type = url.getParameter(Constants.EXCHANGER_KEY, Constants.DEFAULT_EXCHANGER);//没有配置exchanger，默认type==header
+        return getExchanger(type);// 返回HeaderExchanger
     }
 
     public static Exchanger getExchanger(String type) {
-        return ExtensionLoader.getExtensionLoader(Exchanger.class).getExtension(type);
+        return ExtensionLoader.getExtensionLoader(Exchanger.class).getExtension(type);//spi
     }
 
 }

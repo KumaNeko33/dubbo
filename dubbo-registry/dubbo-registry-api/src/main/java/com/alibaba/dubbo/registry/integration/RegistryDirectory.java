@@ -254,7 +254,7 @@ public class RegistryDirectory<T> extends AbstractDirectory<T> implements Notify
             if (invokerUrls.isEmpty()) {
                 return;
             }
-            Map<String, Invoker<T>> newUrlInvokerMap = toInvokers(invokerUrls);// 将url列表转成Invoker列表 Translate url list to Invoker map
+            Map<String, Invoker<T>> newUrlInvokerMap = toInvokers(invokerUrls);// 将url列表转成Invoker列表
             Map<String, List<Invoker<T>>> newMethodInvokerMap = toMethodInvokers(newUrlInvokerMap); // 将方法名映射到Invoker列表 Change method name to map Invoker Map
             // 改变状态 state change
             // 如果计算错误，则不进行处理 If the calculation is wrong, it is not processed.
@@ -489,7 +489,7 @@ public class RegistryDirectory<T> extends AbstractDirectory<T> implements Notify
                 invokersList.add(invoker);
             }
         }
-        List<Invoker<T>> newInvokersList = route(invokersList, null);
+        List<Invoker<T>> newInvokersList = route(invokersList, null);// 使用条件路由ConditionRouter
         newMethodInvokerMap.put(Constants.ANY_VALUE, newInvokersList);
         if (serviceMethods != null && serviceMethods.length > 0) {
             for (String method : serviceMethods) {
@@ -497,7 +497,7 @@ public class RegistryDirectory<T> extends AbstractDirectory<T> implements Notify
                 if (methodInvokers == null || methodInvokers.isEmpty()) {
                     methodInvokers = newInvokersList;
                 }
-                newMethodInvokerMap.put(method, route(methodInvokers, method));
+                newMethodInvokerMap.put(method, route(methodInvokers, method));// 使用条件路由ConditionRouter
             }
         }
         // sort and unmodifiable

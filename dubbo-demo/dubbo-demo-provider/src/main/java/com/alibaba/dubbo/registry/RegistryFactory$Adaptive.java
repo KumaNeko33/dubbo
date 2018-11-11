@@ -9,7 +9,7 @@ public class RegistryFactory$Adaptive implements com.alibaba.dubbo.registry.Regi
         com.alibaba.dubbo.common.URL url = arg0;
         String extName = ( url.getProtocol() == null ? "dubbo" : url.getProtocol() );
         if(extName == null) throw new IllegalStateException("Fail to get extension(com.alibaba.dubbo.registry.RegistryFactory) name from url(" + url.toString() + ") use keys([protocol])");
-        com.alibaba.dubbo.registry.RegistryFactory extension = (com.alibaba.dubbo.registry.RegistryFactory)ExtensionLoader.getExtensionLoader(com.alibaba.dubbo.registry.RegistryFactory.class).getExtension(extName);
-        return extension.getRegistry(arg0);
+        com.alibaba.dubbo.registry.RegistryFactory extension = (com.alibaba.dubbo.registry.RegistryFactory)ExtensionLoader.getExtensionLoader(com.alibaba.dubbo.registry.RegistryFactory.class).getExtension(extName);//extName=zookeeper
+        return extension.getRegistry(arg0);//extension=ZookeeperRegistryFactory   ZookeeperRegistryFactory.getRegistry(arg0)会调用父类AbstractRegistryFactory的getRegistry()方法
     }
 }

@@ -120,8 +120,8 @@ public class RegistryProtocol implements Protocol {
     }
 
     public void register(URL registryUrl, URL registedProviderUrl) {
-        Registry registry = registryFactory.getRegistry(registryUrl);
-        registry.register(registedProviderUrl);//注册 提供者服务到注册中心
+        Registry registry = registryFactory.getRegistry(registryUrl);//根据注册中心地址获取注册中心Registry实例 ZookeeperRegistry（并用ZkClient建立连接？），这里为什么又获取一次，不会代码重复吗？
+        registry.register(registedProviderUrl);//生成节点，注册 提供者服务到注册中心ZookeeperRegistry
     }
 
     /**
@@ -132,20 +132,20 @@ public class RegistryProtocol implements Protocol {
      * @throws RpcException
      */
     public <T> Exporter<T> export(final Invoker<T> originInvoker) throws RpcException {
-        //export invoker
+        //export invoker 暴露invoker  思考：什么时候url以registry开头 变成了 dubbo开头
         final ExporterChangeableWrapper<T> exporter = doLocalExport(originInvoker);// 在DubboProtocol中将originInvoker转换成Exporter,doLocalExport将返回结果Exporter 包装成ExporterChangeableWrapper
 
-        URL registryUrl = getRegistryUrl(originInvoker);
+        URL registryUrl = getRegistryUrl(originInvoker);//zookeeper://127.0.0.1:2181/com.alibaba.dubbo.registry.RegistryService?application=demo-provider&dubbo=2.0.0&export=dubbo%3A%2F%2F192.168.199.110%3A20880%2Fcom.alibaba.dubbo.demo.DemoService%3Fanyhost%3Dtrue%26application%3Ddemo-provider%26bind.ip%3D192.168.199.110%26bind.port%3D20880%26dubbo%3D2.0.0%26generic%3Dfalse%26interface%3Dcom.alibaba.dubbo.demo.DemoService%26methods%3DsayHello%26pid%3D7264%26qos.port%3D22222%26side%3Dprovider%26timestamp%3D1524143422558&pid=7264&qos.port=22222&timestamp=1524143407118
 
-        //注册中心 registry provider
-        final Registry registry = getRegistry(originInvoker);//返回一个new ZookeeperRegistry(url, zookeeperTransporter)
-        final URL registedProviderUrl = getRegistedProviderUrl(originInvoker);
+        //注册提供者 registry provider
+        final Registry registry = getRegistry(originInvoker);//先根据invoker的url获取一个 用于注册到注册中心如zookeeper的Registry实例(改动主要有将url的头从registry改成zookeeper,并将url中的参数&registry=zookeeper去除),然后返回一个new ZookeeperRegistry(url, zookeeperTransporter)
+        final URL registedProviderUrl = getRegistedProviderUrl(originInvoker);//将originInvoker的providerUrl转成用于 注册到注册中心的 Url dubbo://192.168.199.110:20880/com.alibaba.dubbo.demo.DemoService?anyhost=true&application=demo-provider&dubbo=2.0.0&generic=false&interface=com.alibaba.dubbo.demo.DemoService&methods=sayHello&pid=7264&side=provider&timestamp=1524143422558
 
         //判断是否延长发布服务 to judge to delay publish whether or not
-        boolean register = registedProviderUrl.getParameter("register", true);
+        boolean register = registedProviderUrl.getParameter("register", true);//true
 
-        ProviderConsumerRegTable.registerProvider(originInvoker, registryUrl, registedProviderUrl);//？
-
+        ProviderConsumerRegTable.registerProvider(originInvoker, registryUrl, registedProviderUrl);//将invoker,registryUrl和providerUrl封装成ProviderInvokerWrapper后保存到 提供者消费者注册表类的 提供者invokers
+        //zookeeper创建节点
         if (register) {
             register(registryUrl, registedProviderUrl);//注册服务到 zookeeper，最终是在zookeeper创建服务节点
             ProviderConsumerRegTable.getProviderWrapper(originInvoker).setReg(true);
@@ -170,9 +170,9 @@ public class RegistryProtocol implements Protocol {
             synchronized (bounds) {
                 exporter = (ExporterChangeableWrapper<T>) bounds.get(key);
                 if (exporter == null) {
-                    final Invoker<?> invokerDelegete = new InvokerDelegete<T>(originInvoker, getProviderUrl(originInvoker));
-                    exporter = new ExporterChangeableWrapper<T>((Exporter<T>) protocol.export(invokerDelegete), originInvoker);//将exporter包装成ExporterChangeableWrapper，这里的protocol实例是ProtocolFilterWrapper
-                    bounds.put(key, exporter);
+                    final Invoker<?> invokerDelegete = new InvokerDelegete<T>(originInvoker, getProviderUrl(originInvoker));//invoker代表（delegete：代表)
+                    exporter = new ExporterChangeableWrapper<T>((Exporter<T>) protocol.export(invokerDelegete), originInvoker);//将exporter包装成ExporterChangeableWrapper，这里的protocol实例是 Protocol$Adaptive
+                    bounds.put(key, exporter);// 保存exporter到RegistryProtocol的缓存bounds中
                 }
             }
         }
@@ -199,7 +199,7 @@ public class RegistryProtocol implements Protocol {
 
     /**
      * Get an instance of registry based on the address of invoker
-     *
+     * 根据invoker的url获取一个 用于注册到注册中心如zookeeper的实例，改动主要有将url的头从registry改成zookeeper,并将url中的参数&registry=zookeeper去除
      * @param originInvoker
      * @return
      */
@@ -219,14 +219,14 @@ public class RegistryProtocol implements Protocol {
 
 
     /**
-     * Return the url that is registered to the registry and filter the url parameter once
+     * 过滤一次url的参数然后返回用于注册到注册中心 url地址。Return the url that is registered to the registry and filter the url parameter once
      *
      * @param originInvoker
      * @return
      */
     private URL getRegistedProviderUrl(final Invoker<?> originInvoker) {
         URL providerUrl = getProviderUrl(originInvoker);
-        //The address you see at the registry
+        //移除不必要显示的参数，生成你在注册中心看到的提供者的地址 The address you see at the registry
         final URL registedProviderUrl = providerUrl.removeParameters(getFilteredKeys(providerUrl))
                 .removeParameter(Constants.MONITOR_KEY)
                 .removeParameter(Constants.BIND_IP_KEY)

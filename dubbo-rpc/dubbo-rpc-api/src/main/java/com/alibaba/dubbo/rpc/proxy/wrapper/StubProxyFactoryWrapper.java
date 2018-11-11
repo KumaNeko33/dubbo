@@ -98,7 +98,7 @@ public class StubProxyFactoryWrapper implements ProxyFactory {
         }
         return proxy;
     }
-
+    // arg2 = registry://127.0.0.1:2181/com.alibaba.dubbo.registry.RegistryService?application=demo-provider&dubbo=2.0.0&export=dubbo%3A%2F%2F192.168.18.1%3A20880%2Fcom.alibaba.dubbo.demo.DemoService%3Fanyhost%3Dtrue%26application%3Ddemo-provider%26bind.ip%3D192.168.18.1%26bind.port%3D20880%26dubbo%3D2.0.0%26generic%3Dfalse%26interface%3Dcom.alibaba.dubbo.demo.DemoService%26methods%3DsayHello%26pid%3D2200%26qos.port%3D22222%26side%3Dprovider%26timestamp%3D1523933644722&pid=2200&qos.port=22222&registry=zookeeper&timestamp=1523933276550
     public <T> Invoker<T> getInvoker(T proxy, Class<T> type, URL url) throws RpcException {
         return proxyFactory.getInvoker(proxy, type, url);
     }

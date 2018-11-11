@@ -60,7 +60,7 @@ public class MockClusterInvoker<T> implements Invoker<T> {
     public Class<T> getInterface() {
         return directory.getInterface();
     }
-
+    //服务正常调用 no mock，服务屏蔽 force:direct mock，服务容错 fail-mock
     public Result invoke(Invocation invocation) throws RpcException {
         Result result = null;
 
